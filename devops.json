@@ -1,0 +1,396 @@
+{
+  "name": "devops",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "id": "9eac8ed6-b547-4930-873c-3579d6df720b",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2368,
+        1008
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "62ab0dd8-f5a7-4564-a5ad-12de560d8dad",
+      "name": "Generate an image",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        2672,
+        784
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You're prompt generator agent, you will create prompt for the open-ai image generation model with a random topic among:\n- Education\n- Science \n- Sport\n- Economy\n- Health\nOutput the prompt only, nothing else",
+        "options": {}
+      },
+      "id": "c3b1144a-ccf9-4d54-8210-631f29697273",
+      "name": "Prompt Generation Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2272,
+        784
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {},
+      "id": "3e7d46a6-f48f-4033-946a-177203d0f1b2",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        1600,
+        640
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "af3e6c69-fbfe-49f4-9c29-3a68a821c5a6",
+              "name": "project_id",
+              "type": "string",
+              "value": "n8n-project-467007"
+            },
+            {
+              "id": "1a693ae0-2ba0-4b1b-a00a-4399a8d3ab57",
+              "name": "location",
+              "type": "string",
+              "value": "asia-southeast1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d53474b7-b202-40e1-8b17-82d2a00f06e3",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1824,
+        640
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "projectId": "={{ $json.project_id }}",
+        "requestOptions": {}
+      },
+      "id": "85d62463-7888-4f4c-9030-6b4f2c36addd",
+      "name": "Get a list of Buckets for a given project",
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "position": [
+        2048,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "projectId": "={{ $json.project_id }}",
+        "bucketName": "=bucket{{ $workflow.id.toLowerCase() }}{{ $now.format('hhmm') }}",
+        "createAcl": {},
+        "createBody": {
+          "dataLocations": "=[ {{ $json.location }}]"
+        },
+        "requestOptions": {}
+      },
+      "id": "b30da6b9-39ae-4915-a9d9-75506756a5dd",
+      "name": "Create a new Bucket",
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "position": [
+        2048,
+        784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "c5a7a5a1-06c2-4a72-9883-5407174619be",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "position": [
+        2368,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "create",
+        "bucketName": "={{ $('Create a new Bucket').item.json.name }}",
+        "objectName": "=object_{{ $now.format('yyyyMMdd') }}.{{ $json.fileExtension }}",
+        "createData": {},
+        "createQuery": {},
+        "encryptionHeaders": {},
+        "requestOptions": {}
+      },
+      "id": "13752102-75f8-4218-baeb-9e79935e7e73",
+      "name": "Create an object",
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "position": [
+        2896,
+        784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "delete",
+        "bucketName": "={{ $json.bucket }}",
+        "objectName": "={{ $json.name }}",
+        "getParameters": {},
+        "requestOptions": {}
+      },
+      "id": "5c2997b6-327b-490c-a74b-96399de79aeb",
+      "name": "Delete an object from a bucket",
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "position": [
+        3120,
+        784
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "# Beginner’s Tutorial: Manage Google Cloud Storage Buckets and Objects with n8n\n\n## **Who’s it for**\n- Beginners who want to learn how to automate Google Cloud Storage (GCS) operations with n8n.  \n- Developers who want to combine **AI image generation** with **cloud storage management**.  \n- Anyone looking for a simple introduction to working with **Buckets** and **Objects** in GCS.  \n\n## **How it works / What it does**\nThis workflow demonstrates end-to-end usage of **Google Cloud Storage** with AI integration:  \n\n1. **Trigger:** Start manually by clicking *Execute Workflow*.  \n2. **Edit Fields:** Provide input values (e.g., bucket name or image description).  \n3. **List Buckets:** Retrieve all existing buckets in the project (branch: view only).  \n4. **Create Bucket:** If needed, create a new bucket to store objects.  \n5. **Prompt Generation Agent:** Use an AI model to generate a creative text prompt.  \n6. **Generate Image:** Convert the AI-generated prompt into an image.  \n7. **Upload Object:** Store the generated image as an object in the selected bucket.  \n8. **Delete Object:** Clean up by removing the uploaded object if required.  \n\nThis shows the full lifecycle: *Bucket → Object (Create/Upload/Delete)* combined with AI image generation.  \n\n## **How to set up**\n1. **Trigger the workflow:** Use the *When clicking Execute workflow* node to start manually.  \n2. **Provide inputs:** In *Edit Fields*, specify details such as bucket name or description text for the image.  \n3. **List buckets:** Use the *List Buckets* node to see what exists.  \n4. **Create a bucket:** Use *Create Bucket* if you want a new storage bucket.  \n5. **Generate prompt & image:**  \n   - The *Prompt Generation Agent* uses an OpenAI Chat Model to create an image prompt.  \n   - The *Generate an Image* node turns this prompt into an actual image.  \n6. **Upload to bucket:** Use *Create Object* to upload the generated image into your GCS bucket.  \n7. **Delete object (optional):** Use *Delete Object* to remove the file from the bucket as a cleanup step.  \n\n## **Requirements**\n- An active **Google Cloud account** with **Cloud Storage API enabled**.  \n- A **Service Account Key (JSON)** credential added in n8n for GCS.  \n- An **OpenAI API Key** configured in n8n for the prompt and image generation nodes.  \n- Basic familiarity with running workflows in n8n.  \n  \n## **How to customize the workflow**\n- **Different object types:** Instead of images, upload PDFs, logs, or text files.  \n- **Automatic cleanup:** Skip the delete step if you want objects to persist.  \n- **Schedule trigger:** Replace manual execution with a weekly or daily schedule.  \n- **Dynamic prompts:** Accept user input from a form or webhook to generate images.  \n- **Multi-bucket management:** Extend the logic to manage multiple buckets across projects.  \n- **Notifications:** Add a Slack/Email step after upload to notify your team with the object URL.  \n\n✅ By the end of this tutorial, you’ll understand how to:  \n- Work with **Buckets** (list, create).  \n- Work with **Objects** (upload, delete).  \n- Integrate **AI image generation** with Google Cloud Storage.  ",
+        "height": 1280,
+        "width": 1200
+      },
+      "id": "acee0990-8fc8-4f73-bf63-df357bdcf9fa",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        240,
+        112
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 1. Start the Workflow\nBegin by manually executing the workflow. This helps you test and understand each step before automating it with a schedule.",
+        "height": 112,
+        "width": 352
+      },
+      "id": "272b5258-a08d-46d9-bd34-0bdd2f989864",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1520,
+        448
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 2. Provide Input Fields\nFill in the required fields such as the bucket name and image description. These inputs will guide how the workflow runs.",
+        "height": 128
+      },
+      "id": "6de7c911-962f-41e5-990f-bfa6d5b1ef12",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1744,
+        800
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 3. List all the current Google Cloud Storage buckets \nList all the current Google Cloud Storage buckets in your project. This lets you see what’s already available before creating new ones.\n\n",
+        "height": 192
+      },
+      "id": "9faace98-ec5e-455f-a2ad-810318fdbdf4",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2016,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 4. Create a New Bucket\nIf the bucket you want does not exist, the workflow can create a new bucket for you automatically.",
+        "height": 128
+      },
+      "id": "bfa0b340-9554-4d37-9641-3d891a5ad255",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2000,
+        992
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "\n### 5. Generate an AI Prompt\n- Use the AI agent to turn your simple input into a more descriptive or creative prompt. This will be used for image generation.\n- Send the AI-generated prompt to the image generation node and produce an image file.",
+        "width": 496
+      },
+      "id": "7b2ba331-d9d4-4cee-ac1b-44db7d6a4326",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2272,
+        608
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 7. Upload the Image to a Bucket\nTake the generated image and upload it as an object inside your chosen Google Cloud Storage bucket.",
+        "height": 144
+      },
+      "id": "4a467581-c759-4cf2-ad3a-43575816437b",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2832,
+        992
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "### 8. Delete the Object (Optional)\nIf you no longer need the file, the workflow can also remove the object from the bucket to keep storage clean."
+      },
+      "id": "3fffd60b-49cf-4882-9ed0-8b187c9a14d8",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3104,
+        576
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get a list of Buckets for a given project",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a new Bucket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an object": {
+      "main": [
+        [
+          {
+            "node": "Delete an object from a bucket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Create an object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prompt Generation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a new Bucket": {
+      "main": [
+        [
+          {
+            "node": "Prompt Generation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Generation Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a list of Buckets for a given project": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0badaffe-f863-4bef-b55e-ac5f1596d743",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8f6991183a60ea3a3b2ab84fd1f0365963112f83372d93dd5e3c4dd3f0f14d98"
+  },
+  "id": "OPobwccNfmmNm1cH",
+  "tags": []
+}
